@@ -13,20 +13,20 @@ Session(app)
 def index():
 
     if "board" not in session:
-        session["board"] = [[None, None, None], [None, None, None], [None, None, None]] * 9
+        session["board"] = [[None, None, None], [None, None, None], [None, None, None]]
         session["turn"] = "X"
-        session["move"] = 0
         session["playing"] = True
+        session["moves"] = []
     
-    return render_template("game.html", game=session["board"][session["move"]], turn=session["turn"], playing=session["playing"])
+    return render_template("game.html", game=session["board"], turn=session["turn"], playing=session["playing"], moves=session["moves"])
 
 @app.route("/play/<int:row>/<int:col>")
 def play(row, col):
     
-    session["move"] += 1
-    session["board"][1][row][col] = session["turn"]
+    session["board"][row][col] = session["turn"]
+    session["moves"].append((row, col, session["turn"]))
 
-    game = session["board"][session["move"]]
+    game = session["board"]
 
     if game[row][0] == game[row][1] == game[row][2] or game[0][col] == game[1][col] == game[2][col] or checkDiagonals():
         session["playing"] = False
@@ -37,13 +37,24 @@ def play(row, col):
 
     return redirect(url_for("index"))
 
+@app.route("/undo")
+def undo():
+    undoMove(session["moves"].pop())
+    return redirect(url_for("index"))
+
 @app.route("/reset")
 def reset():
-    session.clear()
+    session.clear() 
     return redirect(url_for("index"))
 
 def checkDiagonals():
-    game = session["board"][session["move"]]
-    if game[1][1]:
-        return game[0][0]==game[1][1]==game[2][2] or game[2][0]==game[1][1]==game[0][2]
+    if session["board"][1][1]:
+        return session["board"][0][0]==session["board"][1][1]==session["board"][2][2] or session["board"][2][0]==session["board"][1][1]==session["board"][0][2]
     return False
+
+def undoMove(move):
+    session["board"][move[0]][move[1]] = None
+    if session["turn"] == "X":
+        session["turn"] = "O"
+    else:
+        session["turn"] = "X"
