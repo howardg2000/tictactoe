@@ -24,7 +24,7 @@ def index():
 def play(row, col):
     
     session["move"] += 1
-    session["board"][session["move"]][row][col] = session["turn"]
+    session["board"][1][row][col] = session["turn"]
 
     game = session["board"][session["move"]]
 
