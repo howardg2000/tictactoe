@@ -22,13 +22,12 @@ def index():
 
 @app.route("/play/<int:row>/<int:col>")
 def play(row, col):
-    
     session["board"][row][col] = session["turn"]
     session["moves"].append((row, col, session["turn"]))
 
     game = session["board"]
 
-    if game[row][0] == game[row][1] == game[row][2] or game[0][col] == game[1][col] == game[2][col] or checkDiagonals():
+    if game[row][0] == game[row][1] == game[row][2] or game[0][col] == game[1][col] == game[2][col] or checkDiagonals(game):
         session["playing"] = False
     elif session["turn"] == "X":
         session["turn"] = "O"
@@ -44,12 +43,19 @@ def undo():
 
 @app.route("/reset")
 def reset():
-    session.clear() 
+    session.clear()     
     return redirect(url_for("index"))
 
-def checkDiagonals():
-    if session["board"][1][1]:
-        return session["board"][0][0]==session["board"][1][1]==session["board"][2][2] or session["board"][2][0]==session["board"][1][1]==session["board"][0][2]
+@app.route("/computer")
+def computer():
+    move = minimax(session["board"], session["turn"])[1]
+    print move
+    return redirect(url_for('play', row=move[0], col=move[1]))
+
+
+def checkDiagonals(game):
+    if game[1][1]:
+        return game[0][0] == game[1][1] == game[2][2] or game[2][0] == game[1][1] == game[0][2]
     return False
 
 def undoMove(move):
@@ -58,3 +64,42 @@ def undoMove(move):
         session["turn"] = "O"
     else:
         session["turn"] = "X"
+
+def minimax(game, turn):
+    if game[0][0] == game[0][1] == game[0][2] == "X" or game[1][0] == game[1][1] == game[1][2] == "X" or game[2][0] == game[2][1] == game[2][2] == "X" or game[0][0] == game[1][0] == game[2][0] == "X" or game[0][1] == game[1][1] == game[2][1] == "X" or game[0][2] == game[1][2] == game[2][2] == "X" or game[0][0] == game[1][1] == game[2][2] == "X" or game[0][2] == game[1][1] == game[2][0] == "X":
+        return (11, (None, None))
+    elif game[0][0] == game[0][1] == game[0][2] == "O" or game[1][0] == game[1][1] == game[1][2] == "O" or game[2][0] == game[2][1] == game[2][2] == "O" or game[0][0] == game[1][0] == game[2][0] == "O" or game[0][1] == game[1][1] == game[2][1] == "O" or game[0][2] == game[1][2] == game[2][2] == "O" or game[0][0] == game[1][1] == game[2][2] == "O" or game[0][2] == game[1][1] == game[2][0] == "O":
+        return (-11, (None, None))
+    elif game[0][0] and game[1][0] and game[2][0] and game[0][1] and game[1][1] and game[2][1] and game[0][2] and game[1][2] and game[2][2]:
+        return (0, (None, None))  
+    
+    moves = []
+    bestmove = (None, None)
+    for row in range(3):
+        for col in range(3):
+            if not game[row][col]:
+                moves.append((row, col))
+    
+    if turn == "X":
+        value = -12
+        for move in moves:
+            newgame = game
+            newgame[move[0]][move[1]] = "X"
+            newmove = minimax(newgame, "O")
+            if newmove[0] > value:
+                value = newmove[0] - 1
+                bestmove = move
+            newgame[move[0]][move[1]] = None
+            
+    else:
+        value = 12
+        for move in moves:
+            newgame = game
+            newgame[move[0]][move[1]] = "O"
+            newmove = minimax(newgame, "X")
+            if newmove[0] < value:
+                value = newmove[0] + 1
+                bestmove = move
+            newgame[move[0]][move[1]] = None
+    print (str(bestmove) + " gives " + str(value) + " on turn " + turn)  
+    return (value, bestmove)

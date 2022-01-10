@@ -47,6 +47,10 @@
         {% if moves and playing %}
         <a href="{{ url_for('undo') }}">Undo move</a>
         {% endif %}
+        {% if playing %}
+        <br>
+        <a href="{{ url_for('computer') }}">Computer move</a>
+        {% endif %}
         <br>
         <a href="{{ url_for('reset') }}">Reset game</a>
     </body>
